@@ -15,7 +15,7 @@ Android 平台开发可直接使用的 GMSSL 依赖库， 是基于  [GmSSL-Java
                  url 'https://maven.pkg.github.com/Heart-Beats/BaseProject'
                  credentials {
                      username = 'Heart-Beats'
-                     password = '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'
+                     password = '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'   // github 检测会导致失效，可以私下询问或者克隆代码自己编译上传私库
                  }
              }
          }

@@ -1,32 +1,50 @@
-cmake_minimum_required(VERSION 3.2)
-project(gmssljni)
+cmake_minimum_required(VERSION 3.22.1)
 
-# 设置 so 文件生成路径
+project("gmssljni")
+
+
+# 设置 so 文件生成路径(必须在 add_library 之前设置才可生效)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/jniLibs/${ANDROID_ABI})
 
-#find_package(Java REQUIRED)
-#find_package(JNI REQUIRED)
-#include_directories(${JNI_INCLUDE_DIRS})
-#include(UseJava)
+# 添加所有源文件，编译到动态库中
+aux_source_directory(src SRC_LIST)
+add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC_LIST})
 
-#将给定的目录添加到编译器用来搜索头文件的目录中
-include_directories(jni_include)
-#include_directories(/usr/local/include)
 
-aux_source_directory(. DIR_SRCS)
+#将给定的目录添加到编译器用来搜索头文件的目录中（若有子目录也需手动添加）
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_library(gmssljni SHARED ${DIR_SRCS})
+find_library(log-lib log)
 
-#target_link_libraries(gmssljni ${JNI_LIBRARIES})
-#target_link_libraries(gmssljni -L/usr/local/lib)
+# 链接动态库
+target_link_libraries(${CMAKE_PROJECT_NAME} ${log-lib})
 
-#为 gmssljni 添加需要链接的共享库
-target_link_libraries(gmssljni gmssl)
 
-# 指定编译给定目标时要使用的include目录
-target_include_directories(gmssljni PUBLIC ${CMAKE_SOURCE_DIR}/src/include)
-
-#enable_testing()
-
-#向当前工程添加存放源文件的子目录
+#添加子项目的目录
 add_subdirectory(gmssl_lib)
+#链接子项目， gmssl 为子项目的名称
+target_link_libraries(${CMAKE_PROJECT_NAME} gmssl)
+
+
+# ******************** 项目中依赖其他动态库下方需要修改  **************************************
+## 根据 ANDROID_ABI  设置链接的动态库路径
+set(DEPENDENT_LIBRARY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/libs/${ANDROID_ABI})
+
+if (NOT EXISTS "${DEPENDENT_LIBRARY_PATH}" OR NOT IS_DIRECTORY "${DEPENDENT_LIBRARY_PATH}")
+    message("${DEPENDENT_LIBRARY_PATH} 不存在或不是目录，不去链接动态库")
+    return()
+endif ()
+
+
+# 链接配置文件中的动态库
+file(GLOB DEPENDENT_LIBS "${DEPENDENT_LIBRARY_PATH}/*.so")
+target_link_libraries(${CMAKE_PROJECT_NAME} ${DEPENDENT_LIBS})
+
+# 添加一个 POST_BUILD 命令，将依赖库复制到动态库输出目录
+add_custom_command(
+        TARGET ${CMAKE_PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${DEPENDENT_LIBRARY_PATH} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+        COMMENT "将依赖库复制到输出目录"
+)

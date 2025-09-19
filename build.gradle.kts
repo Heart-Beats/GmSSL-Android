@@ -2,4 +2,17 @@
 plugins {
 	id("com.android.application") version "8.1.2" apply false
 	id("org.jetbrains.kotlin.android") version "1.8.10" apply false
+	id("com.vanniktech.maven.publish") version "0.33.0" apply false
+}
+
+apply(from = "./commonGradle/maven-publish/module_maven_publish_apply.gradle")
+
+task("clean", type = Delete::class) {
+	if (rootProject.buildDir.exists()) {
+		delete(rootProject.buildDir)
+	}
+
+	gradle.includedBuilds.forEach {
+		dependsOn(it.task(":clean"))
+	}
 }

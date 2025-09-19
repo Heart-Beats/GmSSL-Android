@@ -3,9 +3,6 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-apply from: "./maven_push.gradle"
-
-
 android {
     namespace 'com.zdxlz.gmssl_3_1'
     compileSdk 33
